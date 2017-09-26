@@ -3,21 +3,20 @@
  * auto：lovefc
  * time：2017/09/22 16:12
  */
-ezmsq = (function() {
+const async = require('async');
 
-    this.configName = 'default',
+const mysql = require('mysql');
 
-    this.configArray = [],
+const fs    = require('fs');
 
-    this.async = require('async'),
+module.exports = (function() {
+    this.configName = 'default';
 
-    this.mysql = require('mysql'),
+    this.configArray = [];
 
-    this.fs = require('fs'),
+    this.obj = [];
 
-    this.obj = [],
-
-    this.task = new Array(),
+    this.task = new Array();
 	
     //判断是不是一个数组
     this.isArray = function(o) {
@@ -31,29 +30,30 @@ ezmsq = (function() {
         arr['callback'] = callback;
         this.task[taskname] = arr;
         return this;
-    },
+    };
+	
     //运行任务
     this.run = function(taskname) {
         if (typeof taskname != "null") {
             var tasks = new Array();
             var i = 0;
             for (var key in this.task) {
-                tasks[i] = key; ++i;
+                tasks[i] = key;
+				++i;
             }
         } else {
             if (this.isArray(taskname)) var tasks = taskname;
             else var tasks = [taskname];
         }
-
-        this.async.mapSeries(tasks,
+        async.mapSeries(tasks,
         function(item, cb) {
             cb(null, this.obj[this.configName].query(this.task[item]['sql'], this.task[item]['params'], this.task[item]['callback']));
         });
-    },
+    };
 
     //读取一个配置文件
     this.config = function(file) {
-        var data = this.fs.readFileSync(file, "utf-8");
+        var data = fs.readFileSync(file, "utf-8");
         var config = JSON.parse(data.toString());
         this.configArray = config;
     },
@@ -62,12 +62,12 @@ ezmsq = (function() {
     this.getConfig = function(configname) {
         this.configName = configname;
         return this;
-    },
-
+    };
+	
     //初始化运行
     this.init = function() {
         var config = this.configArray[this.configName];
-        var connection = this.mysql.createConnection({
+        var connection = mysql.createConnection({
             host: config.host,
             charset: typeof config.charset == "null" ? "UTF8_GENERAL_CI": config.charset,
             user: config.user,
@@ -79,8 +79,7 @@ ezmsq = (function() {
         connection.connect();
         this.obj[this.configName] = connection;
         return this;
-    }
+    };
+	
     return this;
 })();
-
-module.exports = ezmsq;
